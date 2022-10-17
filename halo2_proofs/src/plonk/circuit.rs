@@ -1097,6 +1097,39 @@ impl<F: std::fmt::Debug> std::fmt::Debug for Expression<F> {
     }
 }
 
+impl<F: std::fmt::Display> std::fmt::Display for Expression<F> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Expression::Constant(scalar) => write!(f, "{}", scalar),
+            Expression::Selector(selector) => write!(f, "{:?}", selector),
+            // Skip enum variant and print query struct directly to maintain backwards compatibility.
+            Expression::Fixed(FixedQuery {
+                index: _,
+                column_index,
+                rotation,
+            }) => write!(f, "F{}[{}]", column_index, rotation.0),
+            Expression::Advice(AdviceQuery {
+                index: _,
+                column_index,
+                rotation,
+                phase,
+            }) => write!(f, "A{}<{}>[{}]", column_index, phase.0, rotation.0),
+            Expression::Instance(InstanceQuery {
+                index: _,
+                column_index,
+                rotation,
+            }) =>  write!(f, "I{}[{}]", column_index, rotation.0),
+            Expression::Challenge(challenge) => write!(f, "Challenge{}<{}>", challenge.index, challenge.phase.0),
+            Expression::Negated(poly) => write!(f, "-{}", poly),
+            Expression::Sum(a, b) => write!(f, "{} + {}", a, b),
+            Expression::Product(a, b) => write!(f, "{} * {}", a, b),
+            Expression::Scaled(poly, scalar) =>
+                write!(f, "{} * {}", scalar, poly),
+        }
+    }
+}
+
+
 impl<F: Field> Neg for Expression<F> {
     type Output = Expression<F>;
     fn neg(self) -> Self::Output {
